@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spin the Wheel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    canvas {
+      margin: 20px auto;
+      display: block;
+    }
+    #formSection, #result {
+      margin: 20px auto;
+      max-width: 300px;
+    }
+    #spinBtn {
+      margin-top: 20px;
+    }
+    #pointer {
+      width: 0;
+      height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-bottom: 30px solid black;
+      margin: 0 auto 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Spin the Wheel & Win a Discount!</h1>
+
+  <div id="formSection">
+    <input type="text" id="name" placeholder="Your Name" required /><br><br>
+    <input type="email" id="email" placeholder="Your Email" required /><br><br>
+    <button onclick="startGame()">Submit & Play</button>
+  </div>
+
+  <div id="pointer"></div>
+  <canvas id="wheel" width="300" height="300" style="display:none;"></canvas>
+  <button id="spinBtn" onclick="spinWheel()" style="display:none">Spin</button>
+
+  <div id="result"></div>
+
+  <script>
+    const options = ['5%', '6%', '7%'];
+    const colors = ['#e74c3c', '#27ae60', '#3498db'];
+    let spinning = false;
+    let angle = 0;
+    let userName = "";
+    let userEmail = "";
+
+    const canvas = document.getElementById("wheel");
+    const ctx = canvas.getContext("2d");
+
+    function drawWheel() {
+      const radius = canvas.width / 2;
+      const numSegments = options.length;
+      const anglePerSegment = (2 * Math.PI) / numSegments;
+
+      for (let i = 0; i < numSegments; i++) {
+        const startAngle = i * anglePerSegment;
+        const endAngle = startAngle + anglePerSegment;
+
+        ctx.beginPath();
+        ctx.moveTo(radius, radius);
+        ctx.arc(radius, radius, radius, startAngle, endAngle);
+        ctx.fillStyle = colors[i];
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(radius, radius);
+        ctx.rotate(startAngle + anglePerSegment / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 20px Arial";
+        ctx.fillText(options[i], radius - 10, 10);
+        ctx.restore();
+      }
+    }
+
+    function rotateWheel(degrees) {
+      canvas.style.transition = 'transform 4s ease-out';
+      canvas.style.transform = `rotate(${degrees}deg)`;
+    }
+
+    function startGame() {
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+
+      if (!name || !email) {
+        alert("Please enter both name and email.");
+        return;
+      }
+
+      const lastPlayed = localStorage.getItem('lastPlayed');
+      const today = new Date().toISOString().split('T')[0];
+
+      if (lastPlayed === today) {
+        document.getElementById('result').innerText = 'Sorry, no second chances!';
+        return;
+      }
+
+      userName = name;
+      userEmail = email;
+
+      document.getElementById('formSection').style.display = 'none';
+      document.getElementById('wheel').style.display = 'block';
+      document.getElementById('spinBtn').style.display = 'inline-block';
+      drawWheel();
+    }
+
+    function spinWheel() {
+      if (spinning) return;
+      spinning = true;
+
+      const degrees = Math.floor(Math.random() * 360) + 1080;
+      rotateWheel(degrees);
+
+      const finalAngle = (degrees % 360);
+      const segmentSize = 360 / options.length;
+      const selected = Math.floor((360 - finalAngle) / segmentSize) % options.length;
+      const prize = options[selected];
+
+      setTimeout(() => {
+        document.getElementById('result').innerHTML = `
+          <strong>Congratulations!</strong><br>
+          Name: ${userName}<br>
+          Email: ${userEmail}<br>
+          You won <strong>${prize}</strong> off.<br><br>
+          <em>Please take a screenshot or a photo of this screen to claim your discount.<br>*T&C applied</em>
+        `;
+        localStorage.setItem('lastPlayed', new Date().toISOString().split('T')[0]);
+        document.getElementById('spinBtn').disabled = true;
+        spinning = false;
+      }, 4000);
+    }
+  </script>
+</body>
+</html>
